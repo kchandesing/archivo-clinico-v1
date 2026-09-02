@@ -6,15 +6,21 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class InstallRequest extends FormRequest
 {
+    /**
+     * Determina si el usuario está autorizado a realizar esta petición.
+     */
     public function authorize(): bool
     {
-        return true;
+        return true; // Debe estar en true para permitir el flujo público
     }
 
+    /**
+     * Obtiene las reglas de validación que se aplicarán a la petición.
+     */
     public function rules(): array
     {
         return [
-            'master_key'     => 'required|string',
+            'master_key'     => 'required|string|min:8|max:50',
             'db_host'        => 'required|string',
             'db_port'        => 'required|string',
             'db_username'    => 'required|string',

@@ -5,6 +5,7 @@
 @push('styles')
     <!-- Inyectamos el CSS exclusivo del instalador en la cabecera del layout -->
     <link href="{{ asset('css/installer.css') }}" rel="stylesheet">
+    
 @endpush
 
 @section('content')
@@ -14,7 +15,7 @@
             
             <!-- Encabezado -->
             <div class="text-center mb-4">
-                <h2 class="fw-bold text-dark m-0">Archivo Clínico v1</h2>
+                <h2 class="fw-bold text-dark m-0">Archivo Clínico 1.0</h2>
                 <p class="text-muted small">Asistente de inicialización del entorno</p>
             </div>
 
@@ -31,26 +32,48 @@
                     @csrf
 
                     <!-- SECCIÓN 1: SEGURIDAD DEL SOFTWARE -->
+                                        <!-- SECCIÓN 1: SEGURIDAD DEL SOFTWARE (HÍBRIDA) -->
+                    <h6 class="text-brand fw-bold mb-3 border-bottom pb-2 small">SEGURIDAD DEL SISTEMA</h6>
                     <div class="mb-3">
-                        <label for="master_key" class="form-label text-secondary fw-semibold small">Llave Maestra (Master Key)</label>
-                        <input type="password" class="form-control form-control-sm @error('master_key') is-invalid @enderror" id="master_key" name="master_key" placeholder="Autorizar instalación" required>
-                        @error('master_key')
-                            <div class="invalid-feedback small">{{ $message }}</div>
-                        @enderror
+                        <label for="master_key" class="form-label text-secondary small">Llave Maestra (Master Key)</label>
+                        <div class="input-group input-group-sm">
+                            <!-- Se precarga la llave provisional generada por el controlador -->
+                            <input type="password" 
+                                   class="form-control @error('master_key') is-invalid @enderror" 
+                                   id="master_key" 
+                                   name="master_key" 
+                                   value="{{ old('master_key', $provisionalKey) }}" 
+                                   placeholder="Define o conserva la llave de instalación" 
+                                   required>
+                            <button class="btn btn-outline-secondary" type="button" id="toggleMasterKeyBtn">
+                                <!-- Icono SVG de un Ojo de Bootstrap Icons (Representación limpia) -->
+                                <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16" id="eyeIcon">
+                                  <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 4.12 8 4.12c2.12 0 3.879.548 5.168 1.838A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 11.88 8 11.88c-2.12 0-3.879-.548-5.168-1.838A13.133 13.133 0 0 1 1.173 8z"/>
+                                  <path d="M5.5 8a2.5 2.5 0 1 1 5 0 2.5 2.5 0 0 1-5 0z"/>
+                                </svg>
+                            </button>
+                            @error('master_key')
+                                <div class="invalid-feedback small d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="form-text text-muted" style="font-size: 0.72rem;">Hemos sugerido una clave segura. Puedes usar esa o escribir una propia.</div>
                     </div>
 
+
                     <!-- SECCIÓN 2: INFRAESTRUCTURA DE BASE DE DATOS -->
-                    <h6 class="text-brand fw-bold mt-4 mb-3 border-bottom pb-2 small">CONFIGURACIÓN POSTGRESQL</h6>
+                    <h6 class="text-brand fw-bold mt-4 mb-3 border-bottom pb-2 small">CONFIGURACIÓN DE LA BASE DE DATOS</h6>
                     
                     <div class="row g-2">
                         <div class="col-8">
                             <label for="db_host" class="form-label text-secondary small">Host Servidor</label>
-                            <input type="text" class="form-control form-control-sm @error('db_host') is-invalid @enderror" id="db_host" name="db_host" value="{{ old('db_host', 'localhost') }}" required>
+                            <!-- Lee DB_HOST del .env, si no existe usa 'localhost' -->
+                            <input type="text" class="form-control form-control-sm @error('db_host') is-invalid @enderror" id="db_host" name="db_host" value="{{ old('db_host', env('DB_HOST', 'localhost')) }}" required>
                             @error('db_host') <div class="invalid-feedback small">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-4">
                             <label for="db_port" class="form-label text-secondary small">Puerto</label>
-                            <input type="text" class="form-control form-control-sm @error('db_port') is-invalid @enderror" id="db_port" name="db_port" value="{{ old('db_port', '5433') }}" required>
+                            <!-- Lee DB_PORT del .env, si no existe usa '5432' o '5433' -->
+                            <input type="text" class="form-control form-control-sm @error('db_port') is-invalid @enderror" id="db_port" name="db_port" value="{{ old('db_port', env('DB_PORT', '5433')) }}" required>
                             @error('db_port') <div class="invalid-feedback small">{{ $message }}</div> @enderror
                         </div>
                     </div>
@@ -58,22 +81,32 @@
                     <div class="row g-2 mt-1">
                         <div class="col-12 col-sm-6">
                             <label for="db_username" class="form-label text-secondary small">Usuario Master DB</label>
-                            <input type="text" class="form-control form-control-sm @error('db_username') is-invalid @enderror" id="db_username" name="db_username" value="{{ old('db_username', 'postgres') }}" required>
+                            <!-- Lee DB_USERNAME del .env, si no existe usa 'postgres' -->
+                            <input type="text" class="form-control form-control-sm @error('db_username') is-invalid @enderror" id="db_username" name="db_username" value="{{ old('db_username', env('DB_USERNAME', 'postgres')) }}" required>
                             @error('db_username') <div class="invalid-feedback small">{{ $message }}</div> @enderror
                         </div>
-                        <div class="col-12 col-sm-6">
+                        <div class="col-12 col-sm-6 ">
                             <label for="db_password" class="form-label text-secondary small">Contraseña DB</label>
-                            <input type="password" class="form-control form-control-sm @error('db_password') is-invalid @enderror" id="db_password" name="db_password" placeholder="Contraseña Postgres" required>
+                            <!-- Lee DB_PASSWORD del .env directamente para rellenarlo si ya existe -->
+                            <input type="password" class="form-control form-control-sm @error('db_password') is-invalid @enderror" id="db_password" name="db_password" value="{{ old('db_password', env('DB_PASSWORD', '')) }}" placeholder="Contraseña Postgres" required>
                             @error('db_password') <div class="invalid-feedback small">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="mb-3 mt-2">
+                            <label for="database_name" class="form-label text-secondary small fw-semibold">Nombre de la Base de Datos a Crear</label>
+                            <!-- Rellena con el old o por defecto sugiere un nombre estándar alineado al proyecto -->
+                            <input type="text" class="form-control form-control-sm @error('database_name') is-invalid @enderror" 
+                                id="database_name" 
+                                name="database_name" 
+                                value="{{ old('database_name', 'archivo_clinico_v1') }}" 
+                                placeholder="ej: archivo_clinico_v1" 
+                                required>
+                            <div class="form-text text-muted" style="font-size: 0.72rem;">El asistente creará este espacio en tu servidor PostgreSQL e inyectará de forma automatizada los triggers e índices trigram.</div>
+                            @error('database_name') 
+                                <div class="invalid-feedback small">{{ $message }}</div> 
+                            @enderror
                         </div>
                     </div>
 
-                    <div class="mb-3 mt-2">
-                        <label ask for="database_name" class="form-label text-secondary small">Nombre de la Base de Datos a Crear</label>
-                        <input type="text" class="form-control form-control-sm @error('database_name') is-invalid @enderror" id="database_name" name="database_name" value="{{ old('database_name', 'archivo_clinico') }}" required>
-                        <div class="form-text text-muted" style="font-size: 0.75rem;">Se creará automáticamente inyectando el esquema clínico.</div>
-                        @error('database_name') <div class="invalid-feedback small">{{ $message }}</div> @enderror
-                    </div>
 
                     <!-- SECCIÓN 3: CREDENCIALES DEL PRIMER ADMINISTRADOR -->
                     <h6 class="text-brand fw-bold mt-4 mb-3 border-bottom pb-2 small">PRIMER ADMINISTRADOR</h6>
@@ -118,7 +151,7 @@
                     <!-- BOTÓN ACCIÓN -->
                     <div class="mt-4">
                         <button type="submit" class="btn btn-brand w-100 py-2 shadow-sm rounded-2" id="submitBtn">
-                            Iniciar Aprovisionamiento Seguro
+                           Crear Base de Datos
                         </button>
                     </div>
 
@@ -126,7 +159,7 @@
             </div>
             
             <div class="text-center mt-3">
-                <p class="text-muted" style="font-size: 0.75rem;">&copy; {{ date('Y') }} Sistema de Archivo Clínico. Arquitectura Desacoplada SOLID.</p>
+                <p class="text-muted" style="font-size: 0.75rem;">&copy; {{ date('Y') }} Sistema de Archivo Clínico. KCHANDESING.</p>
             </div>
 
         </div>
@@ -137,4 +170,5 @@
 @push('scripts')
     <!-- Inyectamos el JS exclusivo del instalador al final del layout -->
     <script src="{{ asset('js/installer.js') }}"></script>
+    
 @endpush

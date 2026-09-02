@@ -12,57 +12,43 @@ use Illuminate\Support\Facades\Log;
 class InstallationService
 {
     /**
-     * Hash seguro Bcrypt de la Master Key para validar el acceso al instalador.
+     * Procesa la instalación completa y retorna la Master Key utilizada.
      */
-    protected string $masterKeyHash = '$2y$12$Zmx1Z2FyZGV2ZWxvcG1lbnRzZWNyZXRrZXlzaG91bGRiZWNoYW5nZWQ'; 
 
-    public function validateMasterKey(string $key): bool
+    public function runFullInstallation(array $data): string
     {
-        $isValid = Hash::check($key, $this->masterKeyHash);
-        
-        if (!$isValid) {
-            Log::warning("Syslog_Instalador: Intento fallido de instalación. Master Key incorrecta.", [
-                'ip' => request()->ip()
-            ]);
-        }
-        
-        return $isValid;
-    }
+        Log::info("Syslog_Instalador: Iniciando aprovisionamiento con Master Key configurada.");
 
-    public function runFullInstallation(array $data): void
-    {
-        Log::info("Syslog_Instalador: Se ha iniciado un intento de preconfiguración web desde la IP: " . request()->ip());
+        // Capturar la llave que el usuario envió (sea la sugerida o la personalizada)
+        $masterKey = $data['master_key'];
 
-        // 1. Conexión Maestra inicial a la BD global 'postgres'
+        // Conexión Maestra a 'postgres'
         $pdoInit = $this->createMasterConnection($data);
-
-        // 2. Comprobar si la base de datos solicitada ya existe
         $this->checkIfDatabaseExists($pdoInit, $data['database_name']);
 
-        // 3. Crear la base de datos física
+        // Crear la base de datos física
         $pdoInit->exec("CREATE DATABASE " . $this->stringToPostgresIdentifier($data['database_name']));
-        unset($pdoInit); // Cerramos formalmente la conexión inicial a 'postgres'
+        unset($pdoInit); 
 
-        // 4. Conexión formal a la base de datos clínica recién creada
+        // Conexión formal a la base de datos clínica recién creada e inyección de esquema
         $pdoClinica = $this->createClinicaConnection($data);
-
-        // 5. Inyectar el esquema .sql que ya tienes montado (Tablas, Índices y Triggers)
         $this->injectSqlSchema($pdoClinica);
 
-        // 6. Insertar la cuenta del Primer Usuario Administrador
+        // Insertar primer Administrador
         $this->seedInitialAdmin($pdoClinica, $data);
         unset($pdoClinica);
 
-        // 7. Encriptar las credenciales mediante la APP_KEY maestra
+        // Encriptar credenciales mediante la APP_KEY maestra
         $encryptedString = $this->encryptDatabaseCredentials($data);
 
-        // 8. Escribir los datos en el archivo .env e IIS
-        $this->updateEnvironmentFile($encryptedString);
+        // Escribir los datos en el archivo .env (Guardando de forma nativa la llave elegida)
+        $this->updateEnvironmentFile($encryptedString, $masterKey);
 
-        // 9. Crear archivo testigo de instalación finalizada
         touch(storage_path('installed.lock'));
 
-        Log::info("Syslog_Instalador: Instalación finalizada con éxito. Archivo .env cifrado y cerrado correctamente.");
+        Log::info("Syslog_Instalador: Instalación finalizada con éxito.");
+
+        return $masterKey;
     }
 
     protected function createMasterConnection(array $data): PDO

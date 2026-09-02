@@ -11,13 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-    $middleware->append(\App\Http\Middleware\CheckIfInstalled::class);
+        // Enlazar el middleware de forma global para que intercepte todas las peticiones
+        $middleware->append(\App\Http\Middleware\CheckIfInstalled::class); 
     })
-    ->withMiddleware(function (Middleware $middleware): void {
-        //
-    })
-    ->withExceptions(function (Exceptions $exceptions): void {
+    ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
-    
-    

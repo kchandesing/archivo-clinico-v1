@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\InstallRequest;
+use App\Http\Requests\InstallRequest; // ← Asegúrate de que esta línea exista
 use App\Services\InstallationService;
 use Exception;
 use PDOException;
@@ -18,28 +18,34 @@ class InstallController extends Controller
         $this->installationService = $installationService;
     }
 
-    public function index()
+        public function index()
     {
-        return view('install.form');
+        // Generar formato XXXX-XXXX-XXXX usando Str de Laravel
+        $provisionalKey = sprintf(
+            '%s-%s-%s',
+            \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(4)),
+            \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(4)),
+            \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(4))
+        );
+
+        return view('install.form', compact('provisionalKey'));
     }
+
 
     public function store(InstallRequest $request)
     {
-        // 1. Validar la Master Key antes de tocar cualquier base de datos
-        if (!$this->installationService->validateMasterKey($request->master_key)) {
-            return back()->withErrors(['master_key' => 'La Master Key proporcionada es incorrecta.'])->withInput();
-        }
-
         try {
-            // 2. Ejecutar el flujo de aprovisionamiento usando el esquema SQL montado
-            $this->installationService->runFullInstallation($request->validated());
+            // Pasamos los datos directo al servicio; el servicio se encargará de guardar la llave en el .env
+            $masterKey = $this->installationService->runFullInstallation($request->validated());
 
-            return redirect()->route('login')->with('success', '¡Sistema inicializado correctamente!');
+            // Redirigir a la pantalla de éxito pasando la llave elegida
+            return redirect()->route('install.success')->with('master_key', $masterKey);
+
         } catch (PDOException $e) {
             Log::error("Syslog_Instalador: Fallo crítico de conexión o sintaxis en PostgreSQL: " . $e->getMessage());
-            return back()->withErrors(['error' => 'Fallo de conexión o sintaxis en PostgreSQL: ' . $e->getMessage()])->withInput();
+            return back()->withErrors(['error' => 'Fallo de conexión en PostgreSQL: ' . $e->getMessage()])->withInput();
         } catch (Exception $e) {
-            Log::error("Syslog_Instalador: Error general en el proceso de instalación: " . $e->getMessage());
+            Log::error("Syslog_Instalador: Error general en la instalación: " . $e->getMessage());
             return back()->withErrors(['error' => $e->getMessage()])->withInput();
         }
     }
