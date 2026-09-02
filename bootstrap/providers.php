@@ -2,5 +2,6 @@
 
 return [
     App\Providers\AppServiceProvider::class,
-    App\Providers\RepositoryServiceProvider::class, // ← Añade esta línea
+    App\Providers\DatabaseConfigurationServiceProvider::class,
+    App\Providers\RepositoryServiceProvider::class,
 ];

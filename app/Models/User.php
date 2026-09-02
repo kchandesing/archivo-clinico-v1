@@ -2,48 +2,53 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    // 1. Indicar el nombre exacto de la tabla de tu script SQL
+    protected $table = 'usuarios';
+
+    // 2. Definir la llave primaria personalizada
+    protected $primaryKey = 'id_usuario';
+
+    // 3. Mapear la columna de fecha_creacion si no usas timestamps nativos (created_at)
+    const CREATED_AT = 'fecha_creacion';
+    const UPDATED_AT = null; // Tu script no contempla fecha_modificacion en usuarios
+
+    // 4. Habilitar la asignación masiva de campos divididos
     protected $fillable = [
-        'name',
+        'id_rol',
+        'nombres',
+        'apellido_paterno',
+        'apellido_materno',
         'email',
         'password',
+        'activo',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
+    // 5. Ocultar campos sensibles en serializaciones
     protected $hidden = [
         'password',
-        'remember_token',
+    ];
+
+    // 6. Castear tipos de datos nativos
+    protected $casts = [
+        'activo' => 'boolean',
+        'fecha_creacion' => 'datetime',
+        'password' => 'hashed',
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Relación: Un Usuario pertenece a un Rol.
      */
-    protected function casts(): array
+    public function rol(): BelongsTo
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        // Pasamos: Modelo destino, FK en esta tabla, Owner Key en la tabla destino
+        return $this->belongsTo(Role::class, 'id_rol', 'id_rol');
     }
 }

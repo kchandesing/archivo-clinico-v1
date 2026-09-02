@@ -1,0 +1,27 @@
+/* Paleta corporativa estilo Odoo (Púrpura institucional) */
+:root {
+    --brand-primary: #714B67;
+    --brand-hover: #5a3c52;
+}
+
+.border-brand-top {
+    border-top: 5px solid var(--brand-primary) !important;
+}
+
+.btn-brand {
+    background-color: var(--brand-primary) !important;
+    color: #ffffff !important;
+    font-weight: 500;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.btn-brand:hover, 
+.btn-brand:focus {
+    background-color: var(--brand-hover) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 0.25rem rgba(113, 75, 103, 0.25) !important;
+}
+
+.text-brand {
+    color: var(--brand-primary) !important;
+}

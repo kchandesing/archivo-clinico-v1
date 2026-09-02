@@ -246,3 +246,87 @@ El Orquestador (InstallController): Un controlador extremadamente delgado. Solo 
 El Motor de Infraestructura (InstallationService): Aquí vive la lógica pesada. Este servicio se conecta temporalmente al servidor de base de datos usando las credenciales maestras del sistema, crea físicamente la nueva base de datos, reescribe el archivo .env en caliente, purga la caché de Laravel para que reconozca los nuevos datos, corre las migraciones, inserta al administrador y genera el archivo de bloqueo.
 
 La Interfaz (install/form.blade.php): Una vista limpia basada en componentes (similar al formulario de Odoo de tu imagen) con validaciones visuales en tiempo real para el usuario.
+
+
+# Módulo de Instalación y Aprovisionamiento Seguro (Wizard)
+## Sistema de Archivo Clínico v1 (Arquitectura SOLID & Clean Code)
+
+Este documento detalla la arquitectura, el flujo lógico y los componentes del asistente de instalación automatizado. Este módulo se diseñó bajo los principios SOLID con el objetivo de desacoplar la infraestructura, asegurar las credenciales de la base de datos y registrar de forma auditable cada paso en el sistema de logs.
+
+---
+
+## 1. Arquitectura y Flujo Lógico General
+
+El propósito del instalador es inicializar el entorno cuando el software se monta por primera vez (por ejemplo, en un servidor IIS). Evita que la aplicación falle por falta de conectividad interceptando al usuario y encapsulándolo en un flujo seguro.
+
+### Diagrama del Ciclo de Vida de una Petición
+1. **Petición Web (`GET /`)** -> Entra al Middleware Global `CheckIfInstalled`.
+2. **Evaluación de Estado** -> El sistema busca físicamente el archivo testigo `storage/installed.lock`.
+   - **Caso A (Instalado):** El archivo existe. La petición sigue su curso normal hacia el Login o Dashboard.
+   - **Caso B (No Instalado):** El archivo no existe. El middleware bloquea el software y redirige de forma obligatoria a `/install`.
+3. **Formulario Web** -> El usuario ingresa las credenciales del servidor, los datos de la nueva BD y los datos del Administrador.
+4. **Procesamiento Seguro** -> El controlador delega la carga al Servicio de Infraestructura, el cual inyecta el esquema `.sql`, cifra las credenciales en el `.env` y genera el archivo de bloqueo para cerrar el ciclo de instalación.
+
+---
+
+## 2. Desglose de Componentes y Conexiones
+
+### A. Capa de Negocio e Infraestructura: `InstallationService.php`
+* **Ubicación:** `app/Services/InstallationService.php`
+* **Para qué sirve:** Es el motor pesado del módulo (Service Layer). Aplica el principio de Responsabilidad Única (SRP) al remover la lógica de base de datos fuera del controlador.
+* **Conexiones e Interacciones:**
+  - **PostgreSQL (Conexión Maestra):** Se conecta inicialmente a la base de datos global nativa `postgres` utilizando un driver `PDO` puro para validar si el nombre de la BD clínica ya existe. Si no existe, ejecuta el comando nativo `CREATE DATABASE`.
+  - **PostgreSQL (Conexión Clínica):** Abre una segunda conexión `PDO` apuntando a la nueva base de datos y ejecuta la función `injectSqlSchema()`. Esta lee y ejecuta en bloque el script físico localizado en `database/sql/database_schema.sql` (creando tablas, índices trigram e inyectando los triggers JSONB de auditoría nativos).
+  - **Cifrado de Datos (`Crypt`):** Recibe las credenciales de conexión en texto plano, las empaqueta en un array y genera una cadena altamente segura cifrada con el algoritmo AES-256 utilizando la llave maestra `APP_KEY` del proyecto.
+  - **Manipulación de Entorno (`.env`):** Escribe físicamente en el archivo `.env` del servidor las variables `APP_INSTALLED=true` y `DB_ENCRYPTED_DATA="...cadena_cifrada..."`. Cambia además `DB_CONNECTION=pgsql` para asegurar que el sistema sepa qué driver usar, y posteriormente purga la caché con `Artisan::call('config:clear')`.
+  - **Eloquent (`Models`):** Utiliza los modelos `Role` y `User` reconfigurados para insertar los primeros registros semilla (Administrador, Usuario, Gerente) y dar de alta al primer usuario utilizando la fachada `Hash::make()` para la contraseña.
+
+### B. Capa de Validación: `InstallRequest.php`
+* **Ubicación:** `app/Http/Requests/InstallRequest.php`
+* **Para qué sirve:** Valida de forma estricta todos los datos del formulario antes de que puedan ser procesados por el servidor.
+* **Conexiones e Interacciones:**
+  - Se conecta directamente con el ciclo de vida de la petición HTTP (`FormRequest` de Laravel).
+  - Protege la base de datos limitando los campos de nombres y apellidos a un máximo de 50 caracteres (`max:50`), previniendo errores de desbordamiento de cadena (`String data, right truncation`) en PostgreSQL debido al cambio estructural del Sprint 1.
+  - Fuerza a que la contraseña administrativa tenga una longitud mínima de 8 caracteres y pase por una confirmación estricta (`confirmed`).
+
+### C. Capa de Control: `InstallController.php`
+* **Ubicación:** `app/Http/Controllers/InstallController.php`
+* **Para qué sirve:** Actúa como el orquestador o intermediario del flujo (Controller Layer). No sabe cómo conectarse a una base de datos ni cómo modificar archivos; solo sabe recibir peticiones y retornar respuestas.
+* **Conexiones e Interacciones:**
+  - **Inyección de Dependencias (SOLID):** Inyecta el `InstallationService` a través de su constructor, permitiendo un desacoplamiento total de la lógica.
+  - **Manejo de Excepciones:** Captura los errores de base de datos (`PDOException`) o lógicos (`Exception`) generados en el servicio. Si algo falla, escribe en el log, evita que la aplicación muestre una pantalla rota (error 500) y regresa limpiamente al usuario al formulario inyectando el mensaje de error exacto.
+
+### D. Capa de Datos: Modelos Eloquent Modificados (`User.php` y `Role.php`)
+* **Ubicación:** `app/Models/User.php` y `app/Models/Role.php`
+* **Para qué sirve:** Mapean y adaptan el ORM de Laravel a la estructura personalizada en español definida en tu script SQL.
+* **Conexiones e Interacciones:**
+  - **`Role`:** Sobreescribe las propiedades de Laravel apuntando a la tabla `roles` y definiendo como clave primaria `id_rol`. Establece una relación de uno a muchos (`hasMany`) con el modelo `User`.
+  - **`User`:** Sobreescribe el modelo de autenticación nativo apuntando a la tabla `usuarios` y definiendo la clave primaria `id_usuario`. Mapea la columna de auditoría de creación usando `const CREATED_AT = 'fecha_creacion'`.
+  - **Configuración de Autenticación (`config/auth.php`):** Se modificó el archivo de configuración core para indicarle al ecosistema de Laravel que el proveedor de autenticación por defecto (`users`) debe resolver las sesiones de los usuarios consumiendo el nuevo modelo `App\Models\User::class` (tabla `usuarios`).
+
+---
+
+## 3. Estrategia de Auditoría de Instalación (Syslog / Logs)
+
+Para cumplir con las normativas de alta disponibilidad y auditoría, el proceso de instalación escribe logs detallados en `storage/logs/laravel.log` divididos en tres niveles de criticidad:
+
+1. **`Log::info`:** Registra el inicio de la instalación, la creación exitosa de la BD, la inyección del esquema `.sql`, el registro del administrador y la culminación del wizard.
+2. **`Log::warning`:** Registra anomalías operativas que no rompen el sistema, específicamente intentos de instalación donde el usuario proporciona una **Master Key incorrecta**, guardando además la dirección IP del atacante.
+3. **`Log::error`:** Registra fallos catastróficos de infraestructura, tales como credenciales incorrectas de PostgreSQL proporcionadas por el usuario, fallos de sintaxis en el archivo SQL o problemas de permisos de escritura en el archivo `.env`.
+
+---
+
+## 4. Guía para Futuras Actualizaciones
+
+Si en el futuro deseas expandir o modificar el instalador (por ejemplo, añadir soporte para el Sprint 2 o modificar variables), toma en cuenta lo siguiente:
+
+1. **Si cambia el esquema SQL global:** Debes actualizar directamente el archivo físico en `database/sql/database_schema.sql`. El servicio lo leerá e inyectará automáticamente en la próxima instalación limpia.
+2. **Si se añaden nuevos roles semilla:** Debes declararlos dentro del método `seedInitialAdmin` en el archivo `InstallationService.php` utilizando el método estático de Eloquent `Role::firstOrCreate()`.
+3. **Si deseas cambiar la palabra clave de instalación (Master Key):** Abre el archivo `InstallationService.php`, localiza la propiedad protegida `$masterKeyHash` y reemplaza el string por un nuevo hash Bcrypt válido. Puedes generar este hash de forma rápida en tu terminal ejecutando `php artisan tinker` seguido de `Illuminate\Support\Facades\Hash::make('NuevaPalabra');`.
+
+¿Cómo funciona ahora el sistema?
+Al entrar a la web, Laravel carga DatabaseConfigurationServiceProvider.
+
+El proveedor revisa el archivo .env. Si DB_ENCRYPTED_DATA está vacío (porque el sistema no se ha instalado), ignora el paso y deja que el middleware CheckIfInstalled redirija al usuario al /install.
+
+Si DB_ENCRYPTED_DATA ya contiene la cadena larga de credenciales, el proveedor la descifra en milisegundos en la memoria RAM del servidor e inyecta los datos de conexión nativos. Tus credenciales reales nunca quedan expuestas en texto plano dentro del .env.
