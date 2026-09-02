@@ -215,3 +215,34 @@ Antes de avanzar al siguiente paso (migraciones), confirma que:
 
 Una vez confirmes que estos puntos funcionan en tu máquina, retomamos el **Paso 2: migraciones** (empezando por `roles` y `usuarios`), ya con la carpeta real del proyecto lista para recibir esos archivos.
 
+El Flujo Lógico y de Ciclo de Vida (El "Cómo funciona")Cuando un usuario monta el proyecto en IIS por primera vez y entra a http://localhost, el flujo debe seguir este orden estricto de validación para evitar errores de infraestructura:[ Petición Web ] ──> ¿Existe el archivo 'storage/installed.lock'?
+                          │
+                          ├──> SÍ: (Flujo normal) El sistema funciona, va al Login/Dashboard.
+                          │
+                          └──> NO: (Flujo de Instalación)
+                                    │
+                                    ├──> ¿La ruta es '/install' o sub-rutas?
+                                    │       ├──> SÍ: Permite el paso al formulario o procesamiento.
+                                    │       └──> NO: Redirige automáticamente a '/install'.
+
+Arquitectura de Logs y Buenas Prácticas (La Auditoría del Proceso)Siguiendo las mejores prácticas de ingeniería de software, la instalación no puede ocurrir "a ciegas". Necesitamos registrar un rastro detallado en los archivos de log de Laravel (storage/logs/laravel.log). Cada paso del aprovisionamiento debe reportar tres niveles de logs:
+
+Log::info: Para transiciones exitosas (ej. "Conexión exitosa a PostgreSQL", "Base de datos 'archivo_clinico' creada").
+
+Log::warning: Para situaciones anómalas pero controlables (ej. "Intento fallido de instalación con Master Key incorrecta desde la IP: X.X.X.X").
+
+Log::error: Para fallos catastróficos que detengan el flujo (ej. "Fallo al ejecutar las migraciones: la tabla X ya existía" o "Permisos denegados en PostgreSQL").
+
+Componentes de Software Requeridos (La Estructura SOLID)
+
+Para llevar esta lógica al código de forma desacoplada y limpia, dividiremos el instalador en 5 piezas clave que interactúan entre sí:
+
+El Guardián (CheckIfInstalled Middleware): Su única responsabilidad es interceptar las rutas y verificar si el archivo de bloqueo existe. Si no existe, bloquea el resto del software y encapsula al usuario en el entorno de instalación.
+
+El Validador (InstallRequest): Un Form Request que se asegura de que ningún dato llegue vacío o mal formateado (ej. que la contraseña cumpla con longitud mínima, que el correo sea válido y que los apellidos no contengan caracteres extraños).
+
+El Orquestador (InstallController): Un controlador extremadamente delgado. Solo recibe los datos validados del formulario, se los pasa al servicio, captura las excepciones si algo sale mal y decide a qué vista redirigir.
+
+El Motor de Infraestructura (InstallationService): Aquí vive la lógica pesada. Este servicio se conecta temporalmente al servidor de base de datos usando las credenciales maestras del sistema, crea físicamente la nueva base de datos, reescribe el archivo .env en caliente, purga la caché de Laravel para que reconozca los nuevos datos, corre las migraciones, inserta al administrador y genera el archivo de bloqueo.
+
+La Interfaz (install/form.blade.php): Una vista limpia basada en componentes (similar al formulario de Odoo de tu imagen) con validaciones visuales en tiempo real para el usuario.
