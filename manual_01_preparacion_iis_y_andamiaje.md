@@ -330,3 +330,81 @@ Al entrar a la web, Laravel carga DatabaseConfigurationServiceProvider.
 El proveedor revisa el archivo .env. Si DB_ENCRYPTED_DATA está vacío (porque el sistema no se ha instalado), ignora el paso y deja que el middleware CheckIfInstalled redirija al usuario al /install.
 
 Si DB_ENCRYPTED_DATA ya contiene la cadena larga de credenciales, el proveedor la descifra en milisegundos en la memoria RAM del servidor e inyecta los datos de conexión nativos. Tus credenciales reales nunca quedan expuestas en texto plano dentro del .env.
+
+
+# Módulo de Autenticación, Rutas Virtuales y Desencriptación Dinámica
+## Sistema de Archivo Clínico v1 (Arquitectura SOLID & Clean Code)
+
+Este documento detalla la arquitectura, la integración del ciclo de vida y los componentes del módulo de inicio de sesión real (Login), así como la reconfiguración de proveedores de servicios de arranque y los ajustes necesarios en el servidor web IIS para procesar el flujo una vez completada la instalación.
+
+---
+
+## 1. Arquitectura y Flujo Lógico Posterior a la Instalación
+
+Una vez que el archivo testigo `storage/installed.lock` ha sido generado físicamente por el asistente de instalación, el sistema transiciona a su estado operativo real (Modo Producción).
+
+### Diagrama del Ciclo de Vida de Autenticación
+1. **Petición Web (`GET /login`)** -> El middleware `CheckIfInstalled` valida el archivo de bloqueo, aprueba el paso y delega la ruta al grupo protegido `guest`.
+2. **Carga Estática en IIS** -> El servidor web procesa la regla del archivo central `public/web.config` y mapea los estilos del framework mediante la función absoluta `{{ asset() }}` para renderizar la interfaz responsiva.
+3. **Validación Temprana** -> Al enviar el formulario, el software intercepta los datos en la capa `LoginRequest` antes de que toquen los recursos de cómputo del servidor.
+4. **Validación de Identidad** -> El controlador utiliza el ecosistema de Laravel adaptado a la tabla en español `usuarios`. Autentica mediante Bcrypt, valida de forma condicional que el flag `activo = TRUE` se cumpla en PostgreSQL y regenera los identificadores de sesión para mitigar vulnerabilidades de fijación de sesión.
+
+---
+
+## 2. Desglose de Componentes y Conexiones
+
+### A. Capa de Seguridad y Arranque: `DatabaseConfigurationServiceProvider.php`
+* **Ubicación:** `app/Providers/DatabaseConfigurationServiceProvider.php`
+* **Para qué sirve:** Intercepta el arranque del framework (`bootstrapping`) en cada petición web entrante para inyectar las credenciales del motor de datos de forma dinámica en la memoria RAM del servidor.
+* **Conexiones e Interacciones:**
+  - **Inyección en Caliente:** Lee el valor alfanumérico alojado en la variable de entorno `DB_ENCRYPTED_DATA` dentro del `.env`. Si contiene datos, utiliza la fachada `Crypt::decrypt` para descifrarlos al vuelo e inyectarlos de forma segura en las llaves de configuración `database.connections.pgsql`.
+  - **Aislamiento de Entorno:** Permite que las credenciales maestras de PostgreSQL permanezcan 100% ocultas y protegidas en texto plano dentro del servidor, mitigando filtraciones de credenciales si el código es compartido en repositorios públicos.
+
+### B. Capa de Control de Accesos: `LoginController.php`
+* **Ubicación:** `app/Http/Controllers/Auth/LoginController.php`
+* **Para qué sirve:** Centraliza y procesa las tres acciones core del estado de sesión: renderizar la tarjeta visual, autenticar credenciales y destruir las variables de sesión (Logout).
+* **Conexiones e Interacciones:**
+  - **Auth Facade:** Conecta directamente con las directivas de seguridad nativas de Laravel, las cuales fueron redirigidas hacia el modelo personalizado `User` y la tabla `usuarios` en español dentro del archivo `config/auth.php`.
+  - **Intended Redirects:** Al autenticar con éxito, redirige al usuario a la ruta protegida que intentaba visitar originalmente (`redirect()->intended()`), mejorando la fluidez operativa del personal clínico.
+
+### C. Capa de Validación de Credenciales: `LoginRequest.php`
+* **Ubicación:** `app/Http/Requests/Auth/LoginRequest.php`
+* **Para qué sirve:** Sanitiza y valida las entradas del formulario web antes de que el controlador intente interactuar con el motor de hashing de Laravel o con PostgreSQL.
+* **Conexiones e Interacciones:**
+  - Aplica restricciones estrictas de formato de correo electrónico (`email`) y define límites de longitud (`max:100`) para mitigar intentos de inyección de código o saturación de peticiones por desbordamiento de búfer.
+
+### D. Interfaz Gráfica Unificada: `login.blade.php` y `app.blade.php`
+* **Ubicación:** `resources/views/auth/login.blade.php` y `resources/views/layouts/app.blade.php`
+* **Para qué sirve:** El Layout Madre (`app.blade.php`) provee la cabecera y el pie de página unificados para todo el sistema, mientras que la vista hija (`login.blade.php`) inyecta la tarjeta responsiva con la paleta de colores institucional del proyecto.
+* **Conexiones e Interacciones:**
+  - **Laravel Assets:** Reemplaza el uso fallido de rutas relativas con puntos (`../public/`) por la función de ayuda `{{ asset() }}`. Esto garantiza que el servidor IIS resuelva los archivos estáticos físicos locales de Bootstrap (`public/css/bootstrap.min.css` y `public/js/bootstrap.bundle.min.js`) de forma absoluta y correcta sin importar el puerto o la URL virtual asignada.
+
+---
+
+## 3. Ajustes Críticos en Servidores Microsoft IIS
+
+Durante el despliegue del flujo real en IIS, se identificaron y resolvieron dos configuraciones de infraestructura esenciales para que Laravel pueda operar correctamente:
+
+1. **Reescritura de URL Virtuales (`public/web.config`):** Por defecto, IIS busca directorios físicos en el disco duro al recibir peticiones web (provocando errores 404). La creación del archivo XML `web.config` dentro de la carpeta `public/` inyecta las reglas nativas para que IIS delegue de forma obligatoria el procesamiento de las rutas virtuales (`/install`, `/login`, `/`) al archivo centralizado `index.php` de Laravel.
+2. **Carga de Archivos Locales (Static Content):** Se requiere que el rol de **Contenido Estático** esté activo en las características de Windows del servidor. De lo contrario, IIS bloqueará por razones de seguridad la lectura de los archivos CSS y JavaScript locales (`public/css/installer.css`, `public/js/installer.js`), rompiendo la maquetación visual responsiva del software.
+
+---
+
+## 4. Estrategia de Auditoría de Accesos (Syslog / Logs)
+
+El ciclo de vida de autenticación reporta de forma detallada los eventos críticos del sistema en `storage/logs/laravel.log`:
+
+* **`Log::info` (Inicios Exitosos):** Registra con precisión qué cuenta del personal clínico ha accedido de forma correcta al sistema (ej. *"Syslog_Acceso: Inicio de sesión exitoso para el usuario: informatica@hcpy.blog"*). Reporta también el cierre formal y destrucción de variables de sesión durante el Logout.
+* **`Log::warning` (Alertas de Seguridad):** Registra cada intento fallido de inicio de sesión, guardando el correo utilizado y la **dirección IP de origen** (`request()->ip()`) para la auditoría oportuna ante posibles ataques de fuerza bruta.
+
+---
+
+## 5. Resumen de Archivos Guardados y Respaldados en Git
+Todos los componentes resultantes de esta sesión de desarrollo limpio han sido confirmados, fusionados y subidos con éxito a tu repositorio remoto de GitHub:
+* `app/Providers/DatabaseConfigurationServiceProvider.php` (Inyección de datos descifrados)
+* `app/Http/Controllers/Auth/LoginController.php` (Lógica de acceso/salida)
+* `app/Http/Requests/Auth/LoginRequest.php` (Validación de credenciales)
+* `public/web.config` (Reglas de reescritura para IIS)
+* `resources/views/layouts/app.blade.php` (Layout global con carga absoluta asset)
+* `resources/views/auth/login.blade.php` (Vista del Login responsivo estilo Odoo)
+* `routes/web.php` (Estructura de rutas unificada y limpia con middlewares `guest` y `auth`)
