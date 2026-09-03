@@ -22,8 +22,9 @@ Route::middleware('auth')->group(function () {
     // Ruta para cerrar sesión
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     
-    // Panel de Control Principal (Dashboard)
+        // Panel de Control Principal (Dashboard)
     Route::get('/', function () {
-        return "¡Bienvenido al Panel de Control del Archivo Clínico! Has iniciado sesión con éxito como administrador.";
+        return view('dashboard.index');
     })->name('home');
+
 });

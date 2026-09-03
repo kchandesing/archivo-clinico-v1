@@ -1,0 +1,80 @@
+:root {
+    --sidebar-bg: #2c3e50;       /* Azul oscuro corporativo para el menú */
+    --sidebar-hover: #34495e;
+    --brand-color: #714B67;      /* Púrpura institucional Odoo */
+}
+
+body {
+    overflow-x: hidden;
+}
+
+/* Contenedor principal Flexbox */
+.wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
+
+/* Barra Lateral (Sidebar) responsiva */
+#sidebar {
+    min-width: 250px;
+    max-width: 250px;
+    background: var(--sidebar-bg);
+    color: #fff;
+    transition: all 0.3s;
+    min-height: 100vh;
+}
+
+#sidebar .sidebar-header {
+    padding: 20px;
+    background: #212f3d;
+    border-bottom: 1px solid #2c3e50;
+}
+
+#sidebar ul p {
+    color: #fff;
+    padding: 10px;
+}
+
+#sidebar ul li a {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    display: block;
+    color: #cbd5e1;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+#sidebar ul li a:hover {
+    color: #fff;
+    background: var(--sidebar-hover);
+}
+
+#sidebar ul li.active > a {
+    color: #fff;
+    background: var(--brand-color);
+}
+
+/* Área de Contenido de la Derecha */
+#content {
+    width: 100%;
+    min-height: 100vh;
+    transition: all 0.3s;
+    background-color: #f8f9fa;
+}
+
+/* Navbar superior interna */
+.navbar-custom {
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+/* Colapso para pantallas móviles (Responsivo) */
+@media (max-width: 768px) {
+    #sidebar {
+        margin-left: -250px;
+    }
+    #sidebar.active {
+        margin-left: 0;
+    }
+}

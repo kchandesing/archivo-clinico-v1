@@ -408,3 +408,67 @@ Todos los componentes resultantes de esta sesión de desarrollo limpio han sido 
 * `resources/views/layouts/app.blade.php` (Layout global con carga absoluta asset)
 * `resources/views/auth/login.blade.php` (Vista del Login responsivo estilo Odoo)
 * `routes/web.php` (Estructura de rutas unificada y limpia con middlewares `guest` y `auth`)
+
+# Módulo de Interfaz Visual Principal (Dashboard & Sidebar Layout)
+## Sistema de Archivo Clínico v1 (Arquitectura SOLID & Clean Code)
+
+Este documento detalla la estructura, las dinámicas de adaptabilidad responsiva y los componentes de la interfaz de usuario del Panel de Control Principal (Dashboard). Este módulo se diseñó bajo los estándares visuales corporativos de sistemas empresariales (estilo Odoo) utilizando utilidades nativas de Bootstrap 5 y Flexbox para garantizar un renderizado fluido y desacoplado.
+
+---
+
+## 1. Arquitectura y Ciclo de Vida del Layout
+
+El Dashboard actúa como la vista centralizada y protegida del sistema. Únicamente es accesible si el motor de autenticación valida la petición web a través del filtro de seguridad `auth`.
+
+### Flujo Operativo de la Interfaz
+1. **Acceso Autenticado (`GET /`)** -> El enrutador intercepta la petición, verifica que el hilo de sesión esté activo en la memoria RAM y extrae el objeto del usuario logueado.
+2. **Inyección Dinámica de Atributos** -> El Layout `dashboard.blade.php` consume en tiempo real las propiedades del modelo `User` para pintar en la barra superior el nombre del operador y su rol correspondiente (`Administrador`, `Usuario` o `Gerente`) extraído desde la relación de PostgreSQL.
+3. **Estructura Flexbox Unificada** -> La maquetación divide la pantalla en dos secciones principales mediante un contenedor envolvente (`.wrapper`): una barra de comandos e histórico fija a la izquierda (Sidebar) y un lienzo dinámico y métrico a la derecha (Content Canvas).
+
+---
+
+## 2. Desglose de Componentes y Conexiones Visuales
+
+### A. El Cascarón Madre: `layouts/dashboard.blade.php`
+* **Ubicación:** `resources/views/layouts/dashboard.blade.php`
+* **Para qué sirve:** Define la plantilla estructural compartida para todas las pantallas del flujo operativo interno (Pacientes, Préstamos, Configuración). Asegura que el menú de navegación y la cabecera superior no tengan que duplicarse en código en cada pantalla nueva.
+* **Conexiones e Interacciones:**
+  - **Auth Integration:** Se conecta con la fachada `Auth::user()` para personalizar el entorno del operador. Incluye además el formulario seguro con la directiva `@csrf` para enviar la petición `POST /logout` al controlador de forma aislada.
+  - **Blade Directives:** Utiliza la directiva `@yield('dashboard_content')` para servir de contenedor a los diferentes entregables técnicos del mapa de ruta (Sprints).
+
+### B. El Lienzo de Operaciones: `dashboard/index.blade.php`
+* **Ubicación:** `resources/views/dashboard/index.blade.php`
+* **Para qué sirve:** Actúa como la pantalla de inicio por defecto (`home`). Presenta de forma gráfica las tarjetas de control métrico y reserva el espacio arquitectónico para la inyección de los componentes pesados.
+* **Conexiones e Interacciones:**
+  - **Grid Responsivo:** Utiliza las clases de rejilla de Bootstrap 5 (`col-12 col-sm-6 col-lg-3`) para reacomodar de forma automática el tamaño de las tarjetas métricas dependiendo del dispositivo de visualización.
+  - **Sprint Anchors:** Deja listos los contenedores para el desarrollo del **Sprint 4** (donde se inyectará el Buscador Predictivo mediante Livewire) y los accesos para la captura y control de expedientes de los Sprints intermedios.
+
+### C. Estilos de Adaptabilidad: `dashboard.css`
+* **Ubicación:** `public/css/dashboard.css`
+* **Para qué sirve:** Controla de forma exclusiva las dimensiones físicas, los efectos de transición elástica de los menús y la inyección de la paleta de colores corporativa (Púrpura institucional Odoo y Azul pizarra de control).
+* **Conexiones e Interacciones:**
+  - Utiliza Media Queries (`@media (max-width: 768px)`) para detectar pantallas móviles o de tablets de uso hospitalario, aplicando un desplazamiento negativo (`margin-left: -250px`) que oculta la barra lateral de forma nativa para maximizar el área de trabajo clínico.
+
+### D. Dinámicas del Frontend: `dashboard.js`
+* **Ubicación:** `public/js/dashboard.js`
+* **Para qué sirve:** Agrega interactividad ligera al Layout controlando los estados de apertura y cierre del menú.
+* **Conexiones e Interacciones:**
+  - Se vincula al evento `click` del disparador `#sidebarCollapse` de la Navbar superior. Utiliza el método `classList.toggle('active')` para alternar la visibilidad de la barra lateral de manera fluida y responsiva sin necesidad de recargar la página.
+
+---
+
+## 3. Estrategia de Auditoría de Salida (Syslog / Logs)
+
+El cierre de sesión (Logout) integrado en la Navbar superior del layout no es solo una acción cosmética; ejecuta un protocolo de seguridad estricto que escribe en `storage/logs/laravel.log`:
+
+* **`Log::info` (Cierre Formal):** Registra exactamente qué cuenta de usuario clínico ha abandonado el entorno de trabajo (ej. *"Syslog_Acceso: Sesión cerrada formalmente por el usuario: informatica@hcpy.blog"*). 
+* **Destrucción de Token:** El controlador invalida el identificador de sesión actual y regenera por completo el token CSRF para asegurar que la sesión quede totalmente inaccesible y blindada en el navegador web del cliente.
+
+---
+
+## 4. Guía para Futuras Extensiones del Panel
+
+Si en el futuro deseas añadir nuevas pantallas operativas dentro de este entorno, sigue estos lineamientos:
+
+1. **Añadir un enlace al menú lateral:** Abre `layouts/dashboard.blade.php`, localiza la lista `<ul>` del Sidebar y añade una etiqueta `<li>`. Utiliza el helper ternario `{{ request()->is('tu-ruta*') ? 'active' : '' }}` en la clase del elemento para que se pinte de color púrpura automáticamente cuando el usuario esté dentro de esa sección.
+2. **Crear una vista hija del panel:** Genera tu nuevo archivo Blade y asegúrate de iniciar el código heredando la plantilla mediante `@extends('layouts.dashboard')`. Todo el desarrollo gráfico de la sección debe quedar encapsulado dentro de las directivas `@section('dashboard_content')` y `@endsection`.
