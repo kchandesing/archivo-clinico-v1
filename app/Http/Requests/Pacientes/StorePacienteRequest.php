@@ -20,11 +20,11 @@ class StorePacienteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // 1. DATOS CORE DEL PACIENTE (Tabla: pacientes)
-            'es_provisional'    => 'required|boolean',
+            // 1. DATOS CORE DEL PACIENTE
+            'es_provisional'    => 'nullable|boolean',
             
-            // Regla condicional: Si NO es provisional, el CURP es obligatorio, único, de 18 caracteres y formato oficial
-            'curp'              => $this->input('es_provisional') ? 'nullable' : [
+            // Si el request trae la variable 'es_provisional', el CURP puede ser null, si no, es obligatorio
+            'curp'              => $this->has('es_provisional') ? 'nullable' : [
                 'required',
                 'string',
                 'size:18',

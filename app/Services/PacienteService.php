@@ -38,15 +38,18 @@ class PacienteService
         Log::info("Syslog_Clinico: Iniciando procesamiento de registro para un nuevo expediente.");
 
         // 1. Aislar y formatear los datos demográficos del Paciente
+        $esProvisional = isset($validatedData['es_provisional']) && $validatedData['es_provisional'] == 1;
+        // 1. Aislar y formatear los datos demográficos del Paciente
         $pacienteData = [
-            'es_provisional'      => (bool) $validatedData['es_provisional'],
-            'curp'                => $validatedData['es_provisional'] ? null : Str::upper($validatedData['curp']),
+            'es_provisional'      => $esProvisional,
+            // Si es provisional el CURP se anula; si no, se procesa en mayúsculas
+            'curp'                => $esProvisional ? null : Str::upper($validatedData['curp']),
             'nombres'             => Str::title(trim($validatedData['nombres'])),
             'apellido_paterno'    => Str::title(trim($validatedData['apellido_paterno'])),
             'apellido_materno'    => isset($validatedData['apellido_materno']) ? Str::title(trim($validatedData['apellido_materno'])) : null,
             'fecha_nacimiento'    => $validatedData['fecha_nacimiento'],
             'sexo'                => $validatedData['sexo'],
-            'id_usuario_registro' => Auth::id(), // Captura automática del operador logueado en IIS
+            'id_usuario_registro' => Auth::id(),
         ];
 
         // 2. Aislar y estructurar los datos domiciliarios

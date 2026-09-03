@@ -15,6 +15,18 @@
         <strong>Error de Infraestructura:</strong> {{ $errors->first('error') }}
     </div>
 @endif
+<!-- NUEVO BLOQUE: Detector de Errores de Validación del Form Request -->
+@if($errors->any() && !$errors->has('error'))
+    <div class="alert alert-warning alert-dismissible fade show shadow-sm p-3 small mb-4" role="alert">
+        <h6 class="fw-bold text-dark mb-2">⚠️ El expediente no se pudo archivar por los siguientes motivos:</h6>
+        <ul class="mb-0 ps-3">
+            @foreach ($errors->all() as $error)
+                <li class="text-danger fw-medium">{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
 
 <div class="row">
     <div class="col-12 col-xl-9">
@@ -195,11 +207,23 @@
         toggleCurpField();
         esProvisionalCheckbox.addEventListener('change', toggleCurpField);
 
-        pacienteForm.addEventListener('submit', function () {
-            if (pacienteForm.checkValidity()) {
-                saveBtn.disabled = true;
-                saveBtn.innerHTML = 'Guardando expediente clínico...';
+        // Control de envío seguro (Evita doble clic y permite el submit nativo)
+        pacienteForm.addEventListener('submit', function (event) {
+            // 1. Verificar que todas las validaciones de Bootstrap y HTML5 sean correctas
+            if (!pacienteForm.checkValidity()) {
+                return; // Si falta un campo requerido, se detiene y muestra las alertas rojas
             }
+
+            // 2. Cambiar la interfaz visual para dar feedback al usuario
+            saveBtn.innerHTML = `
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Archivando expediente en PostgreSQL...
+            `;
+            
+            // 3. Deshabilitar el botón con un desfase de 1 milisegundo para no romper la petición HTTP
+            setTimeout(function() {
+                saveBtn.disabled = true;
+            }, 1);
         });
     });
 </script>
