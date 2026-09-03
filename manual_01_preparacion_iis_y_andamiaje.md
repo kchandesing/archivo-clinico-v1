@@ -472,3 +472,83 @@ Si en el futuro deseas añadir nuevas pantallas operativas dentro de este entorn
 
 1. **Añadir un enlace al menú lateral:** Abre `layouts/dashboard.blade.php`, localiza la lista `<ul>` del Sidebar y añade una etiqueta `<li>`. Utiliza el helper ternario `{{ request()->is('tu-ruta*') ? 'active' : '' }}` en la clase del elemento para que se pinte de color púrpura automáticamente cuando el usuario esté dentro de esa sección.
 2. **Crear una vista hija del panel:** Genera tu nuevo archivo Blade y asegúrate de iniciar el código heredando la plantilla mediante `@extends('layouts.dashboard')`. Todo el desarrollo gráfico de la sección debe quedar encapsulado dentro de las directivas `@section('dashboard_content')` y `@endsection`.
+
+¿Qué logramos con esto y cómo interactúa?Al declarar estos dos modelos bajo las reglas SOLID, acabamos de encapsular toda la complejidad de las llaves primarias en español. Ahora, cuando desarrollemos los formularios de Livewire, podremos registrar o consultar un expediente clínico de forma sumamente limpia utilizando código expresivo de Laravel:php// Ejemplo técnico de cómo buscaremos un paciente trayendo su dirección en una sola consulta indexada:
+$paciente = App\Models\Paciente::with('direccion')->where('curp', $curpBuscado)->first();
+
+¿Qué logramos con esto?Hemos construido los cimientos de la lógica de datos. Ahora, cuando desarrollemos el formulario visual o la tabla de búsqueda, no escribiremos consultas directas; simplemente inyectaremos PacienteRepositoryInterface y mandaremos a llamar a $repository->searchGlobal($input).
+
+¿Qué logramos con este componente?Con este archivo proteges tu backend por completo:Si el usuario activa el checkbox "¿Es expediente provisional?" en tu formulario, el sistema le permite dejar el campo CURP vacío de forma legal.Si es un expediente definitivo, el sistema audita con una expresión de expresión regular (regex) que el formato del CURP sea matemáticamente válido antes de tocar la base de datos.Si un transgresor intenta enviar un apellido de más de 50 caracteres, el sistema detiene la petición en el aire, previniendo errores de truncado de datos en Postgres.
+
+¿Qué logramos con este componente?Con este servicio, la lógica fina queda completamente blindada. El controlador que crearemos a continuación se volverá sumamente delgado; solo tendrá que capturar la petición validada, entregársela a este servicio en una sola línea de código y retornar el éxito hacia tu interfaz.Con toda la artillería de backend (Modelos, Repositorios, Validadores y Servicios) lista bajo estándares SOLID, el último paso del flujo es crear el controlador para conectar las rutas.
+
+ ¿Qué sigue ahora?¡El backend del módulo de pacientes está al 100% cerrado y blindado! El controlador ya sabe exactamente a qué archivos ir a buscar:pacientes.index (Tu buscador y tabla).
+
+ # Módulo de Control de Pacientes y Capa de Persistencia Desacoplada
+## Sistema de Archivo Clínico v1 (Arquitectura SOLID & Clean Code)
+
+Este documento detalla la estructura de la capa de datos core para la administración de expedientes, el patrón de diseño utilizado para aislar la base de datos de la interfaz visual, el mapa de archivos generados y la bitácora técnica de resolución de errores de inyección en servidores Microsoft IIS.
+
+---
+
+## 1. Arquitectura de la Capa de Datos (Sprint 2)
+
+Para cumplir con el requerimiento de alta escalabilidad y mantener componentes delgados, el flujo de información de un paciente se dividió siguiendo el principio de Responsabilidad Única (SRP). La base de datos de PostgreSQL (índices trigram, llaves primarias en español y auditoría integrada) interactúa con el sistema a través de las siguientes capas:
+
+`Interfaz Gráfica (Blade)` -> `Form Request (Validación)` -> `Controlador Delgado` -> `Servicio de Negocio` -> `Contrato/Interfaz del Repositorio` -> `Implementación Eloquent` -> `PostgreSQL`
+
+---
+
+## 2. Mapa de Archivos e Infraestructura del Módulo
+
+A continuación se listan los archivos creados y modificados para dar soporte al control de expedientes, organizados por su capa de responsabilidad en la arquitectura:
+
+### A. Capa de Modelos Eloquent (`app/Models/`)
+*   **`Paciente.php`**: Mapea la tabla `pacientes` y sus columnas de tiempo personalizadas (`fecha_registro`/`fecha_modificacion`). Establece las relaciones `hasOne` con dirección y ubicación física.
+*   **`DireccionPaciente.php`**: Controla la tabla intermedia `direcciones_pacientes` para separar los datos demográficos de los residenciales.
+*   **`LocalizacionFisica.php`**: Gobierna la tabla `localizaciones_fisicas` para administrar pasillos, estantes y el estatus de disponibilidad del expediente (`En Archivo` / `Prestado`).
+
+### B. Capa de Repositorios (Patrón Decoupled)
+*   **`app/Repositories/Contracts/PacienteRepositoryInterface.php`**: Contrato/Interfaz que define los métodos abstractos de búsqueda global predictiva y transacciones de guardado.
+*   **`app/Repositories/Eloquent/PacienteRepository.php`**: Implementación concreta que ejecuta las consultas SQL avanzadas en PostgreSQL utilizando `ILIKE` en paralelo sobre expediente, CURP y nombres.
+
+### C. Capa de Servicios de Negocio (`app/Services/`)
+*   **`PacienteService.php`**: Capa intermedia encargada de capturar automáticamente el ID del usuario operador logueado en IIS, formatear textos con `Str::title` y asegurar que los expedientes provisionales envíen el CURP estrictamente como un valor `null`.
+
+### D. Capa de Validación y Controladores (`app/Http/`)
+*   **`app/Http/Requests/Pacientes/StorePacienteRequest.php`**: Form Request que valida los límites máximos (`max:50`) de la base de datos y aplica una regla condicional: si es provisional el CURP se anula; si es definitivo valida el formato oficial con una expresión regular (`regex`).
+*   **`app/Http/Controllers/Pacientes/PacienteController.php`**: Controlador delgado encargado de orquestar la recepción de datos y renderizar las vistas correspondientes.
+
+### E. Vistas e Interfaces de Usuario (`resources/views/`)
+*   **`layouts/dashboard.blade.php`**: Layout base que contiene el Sidebar lateral corporativo y la Navbar de usuario.
+*   **`pacientes/index.blade.php`**: Lienzo responsivo de la tabla de expedientes clínicos que incluye el buscador global y el diseño de "Estado Vacío" cuando la BD no tiene registros.
+*   **`routes/web.php`**: Archivo de rutas modificado para incluir el grupo protegido de pacientes bajo el middleware `auth`.
+
+---
+
+## 3. Bitácora de Errores e Ingeniería de Soluciones
+
+### Error Detectado: `BindingResolutionException`
+Durante las pruebas de navegación hacia la ruta `/pacientes`, el framework arrojó el siguiente mensaje:
+> *`Target [App\Repositories\Contracts\PacienteRepositoryInterface] is not instantiable while building [PacienteController, PacienteService].`*
+
+#### Diagnóstico Técnico del Bloqueo
+1. **Conflicto de Estándar PSR-4 (Falta de Mayúsculas):** Al realizar el volcado de clases con Composer, el cargador reportó que la subcarpeta de validaciones se llamaba físicamente `app/Http/Requests/auth/` (en minúsculas). Al no coincidir exactamente con la declaración de la clase que usaba `Auth` (con mayúscula), Composer descartó indexar ese mapa de archivos (*Skipping*), arrastrando y bloqueando la carga de los proveedores de servicios que se ejecutaban después.
+2. **Ciclo de Vida en Laravel 12:** El motor de inyección de Laravel 12 ejecuta un control estricto de optimización sobre los proveedores de servicios personalizados. Si hay una anomalía en las clases previas, el contenedor no puede instanciar las interfaces.
+3. **Caché Persistente FastCGI:** Al trabajar bajo el servidor web **Microsoft IIS**, los hilos de ejecución de PHP se congelan en la memoria RAM para optimizar el rendimiento. Los cambios aplicados sobre las estructuras manuales no eran asimilados de forma automática por el servidor.
+
+#### Estrategia de Solución Aplicada
+1. **Renombrado Estricto:** Se corrigió el nombre físico de la carpeta en el disco duro de `auth` a **`Auth`**, alineándolo con las directivas PSR-4.
+2. **Centralización del Enlace (Binding Core):** Se reubicó la sentencia de enlace (`$this->app->bind`) directamente dentro de la función `register()` del archivo **`AppServiceProvider.php`** nativo. Al ser el proveedor principal que el framework arranca de forma obligatoria en el primer milisegundo de la petición, garantizamos la disponibilidad del repositorio en la memoria.
+3. **Purgado Total de Memoria:** Se ejecutó una secuencia en la terminal para limpiar los mapas obsoletos y sincronizar con IIS:
+   ```bash
+   composer dump-autoload
+   php artisan config:clear
+   ```
+
+---
+
+## 4. Resultados Obtenidos
+* El cargador de Composer completó la compilación de forma exitosa indexando **6,782 clases** sin advertencias.
+* La ruta `http://localhost/pacientes` resolvió la inyección de dependencias de forma instantánea.
+* El sistema renderizó correctamente la tabla responsiva de control de expedientes clínicos mostrando el estado vacío parametrizado desde PostgreSQL.

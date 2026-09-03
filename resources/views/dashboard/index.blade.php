@@ -79,12 +79,57 @@
 </div>
 
 <!-- Contenedor para el Buscador de Sprints Futuros -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm p-4 bg-white rounded-3">
-            <h6 class="fw-bold text-dark mb-2">Buscador Operativo Integrado</h6>
-            <p class="text-muted small mb-0">La barra de búsquedas alfabéticas rápidas mediante índices trigram (`pg_trgm`) se acoplará en esta sección durante el desarrollo del Sprint 4.</p>
+<div class="page-body">
+    <div class="card">
+            <div class="card-header">
+                <h5>Historial de Actividad</h5>
+                <div class="card-header-right">
+                    <ul class="list-unstyled card-option" style="width: 30px;">
+                        <li><i class="fa fa open-card-option fa-wrench"></i></li>
+                        <li><i class="fa fa-window-maximize full-card"></i></li>
+                        <li><i class="fa minimize-card fa-minus"></i></li>
+                        <li><i class="fa fa-refresh reload-card"></i></li>
+                        <li><i class="fa fa-trash close-card"></i></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-block table-border-style" style="">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Tipo de Operacion</th>
+                                    <th>Detalles</th>
+                                    <th>fecha hora</th>
+                                    <th>Usuario</th>
+                                </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">1</th>
+                                <td>Registro Paciente</td>
+                                <td>XXXX999999XXXXXX99</td>
+                                <td>03-09-2026 11:45:45</td>
+                                <td>@mdo</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">2</th>
+                                <td>Prestado</td>
+                                <td>Trabajo Social</td>
+                                <td>03-09-2026 11:45:45</td>
+                                <td>@mdo</td></tr>
+                            <tr>
+                                <th scope="row">3</th>
+                                <td>actualizacion</td>
+                                <td>XXXX999999XXXXXX99</td>
+                                <td>03-09-2026 11:45:45</td>
+                                <td>@twitter</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-    </div>
 </div>
 @endsection

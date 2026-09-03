@@ -31,9 +31,10 @@
             
             <!-- Secciones que se habilitarán en los siguientes Sprints -->
             <li class="{{ request()->is('pacientes*') ? 'active' : '' }}">
-                <a href="#submenuPacientes" class="text-muted" style="cursor: not-allowed;">
-                    <i class="bi bi-people me-2"></i> Pacientes (Sprint 2)
+                <a href="{{ route('pacientes.index') }}">
+                    <i class="bi bi-people me-2"></i> Control de Pacientes
                 </a>
+            </li>
             </li>
             <li>
                 <a href="#submenuPrestamos" class="text-muted" style="cursor: not-allowed;">

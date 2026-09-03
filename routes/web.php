@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InstallController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Pacientes\PacienteController;
 
 // 1. RUTAS DEL ASISTENTE DE INSTALACIÓN (WIZARD)
 Route::get('/install', [InstallController::class, 'index'])->name('install.index');
@@ -26,5 +27,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/', function () {
         return view('dashboard.index');
     })->name('home');
+
+    // --- NUEVAS RUTAS: MODULO DE PACIENTES ---
+    Route::get('/pacientes', [PacienteController::class, 'index'])->name('pacientes.index');
+    Route::get('/pacientes/crear', [PacienteController::class, 'create'])->name('pacientes.create');
+    Route::post('/pacientes', [PacienteController::class, 'store'])->name('pacientes.store');
+    Route::get('/pacientes/{id}', [PacienteController::class, 'show'])->name('pacientes.show');
 
 });
