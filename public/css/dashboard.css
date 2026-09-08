@@ -16,6 +16,11 @@ body {
 }
 
 /* Barra Lateral (Sidebar) responsiva */
+
+#sidebarCollapse {
+display: none;
+}
+
 #sidebar {
     min-width: 250px;
     max-width: 250px;
@@ -112,6 +117,12 @@ body {
 	.card .card-header .card-header-right {
 		display: none;
 	}
+	
+	#sidebarCollapse {
+	display: inline-block;
+	}
+
+	
 }
 
 .card .card-header .card-header-right i {
@@ -314,4 +325,8 @@ body {
     #sidebar.active {
         margin-left: 0;
     }
+
+	#sidebarCollapse {
+	display: inline-block;
+	}
 }

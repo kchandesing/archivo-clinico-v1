@@ -59,7 +59,7 @@
                     <span class="navbar-toggler-icon" style="width: 1.2rem; height: 1.2rem;"></span>
                 </button>
 
-                <span class="navbar-text fw-medium text-dark d-none d-sm-inline">
+                <span class="navbar-text fw-medium text-dark 1d-none d-sm-inline">
                     Bienvenido, <span class="text-brand fw-bold">{{ Auth::user()->nombres }}</span>
                 </span>
 
