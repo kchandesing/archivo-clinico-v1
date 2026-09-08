@@ -12,7 +12,6 @@ class LoginController extends Controller
 {
     public function showLoginForm()
     {
-        // Si el usuario ya está autenticado, lo mandamos al inicio
         if (Auth::check()) {
             return redirect()->route('home');
         }
@@ -21,14 +20,13 @@ class LoginController extends Controller
 
     public function login(LoginRequest $request)
     {
-        // Obtener credenciales validadas del Form Request
         $credentials = $request->only('email', 'password');
         
-        // El usuario debe estar activo (según tu script SQL)
+        // Regla implícita de tu script SQL: el usuario debe estar activo
         $credentials['activo'] = true;
 
         if (Auth::attempt($credentials, $request->filled('remember'))) {
-            // Mitigar ataques de fijación de sesión
+            // Regenerar sesión para mitigar vulnerabilidades de seguridad
             $request->session()->regenerate();
 
             Log::info("Syslog_Acceso: Inicio de sesión exitoso para el usuario: " . $request->email);

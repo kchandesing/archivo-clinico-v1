@@ -28,7 +28,7 @@ class Paciente extends Model
         'fecha_nacimiento',
         'sexo',
         'es_provisional',
-        'id_usuario_registro'
+        //'id_usuario_registro'
     ];
 
     // 5. Castear los tipos de datos nativos para su manipulación en PHP

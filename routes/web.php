@@ -34,4 +34,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/pacientes', [PacienteController::class, 'store'])->name('pacientes.store');
     Route::get('/pacientes/{id}', [PacienteController::class, 'show'])->name('pacientes.show');
 
+    // --- NUEVAS RUTAS DE API INTERNA (ESPEJO INEGI) ---
+    Route::prefix('api/catalogos')->group(function () {
+        Route::get('/vialidades', [CatalogosController::class, 'getVialidades'])->name('api.vialidades');
+        Route::get('/afiliaciones', [CatalogosController::class, 'getAfiliaciones'])->name('api.afiliaciones');
+        Route::get('/estados', [CatalogosController::class, 'getEstados'])->name('api.estados');
+        Route::get('/municipios', [CatalogosController::class, 'getMunicipios'])->name('api.municipios');
+        Route::get('/localidades', [CatalogosController::class, 'getLocalidades'])->name('api.localidades');
+    });
+
 });

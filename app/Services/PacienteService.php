@@ -49,7 +49,7 @@ class PacienteService
             'apellido_materno'    => isset($validatedData['apellido_materno']) ? Str::title(trim($validatedData['apellido_materno'])) : null,
             'fecha_nacimiento'    => $validatedData['fecha_nacimiento'],
             'sexo'                => $validatedData['sexo'],
-            'id_usuario_registro' => Auth::id(),
+            //'id_usuario_registro' => Auth::id(),
         ];
 
         // 2. Aislar y estructurar los datos domiciliarios
