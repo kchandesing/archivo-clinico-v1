@@ -10,9 +10,34 @@
     </div>
     <div class="col-12 col-md-6 text-md-end mt-3 mt-md-0">
         <!-- Botón para ir al formulario de captura (Sprint 2 - Siguiente paso) -->
-        <a href="{{ route('pacientes.create') }}" class="btn btn-sm btn-success px-3 py-2 rounded-2 fw-medium shadow-sm">
+        <!-- <a href="{{ route('pacientes.create') }}" class="btn btn-sm btn-success px-3 py-2 rounded-2 fw-medium shadow-sm">
             + Registrar Nuevo Paciente
-        </a>
+        </a> -->
+        <!-- Botón para ir al formulario de captura (Sprint 2 - Siguiente paso) -->
+        <button type="button" class="btn btn-sm btn-success px-3 py-2 rounded-2 fw-medium shadow-sm" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+            Registrar Nuevo Paciente
+        </button>
+
+
+        <!-- Modal -->
+        <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <i class="bi bi-person-fill"></i>
+                        <h5 class="modal-title" id="staticBackdropLabel">Modal title</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        ...
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary">Understood</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -37,24 +62,75 @@
         <div class="card border-0 shadow-sm p-3 bg-white rounded-3">
             <!-- Formulario síncrono que envía por GET para sobreponer resultados en la misma tabla -->
             <form action="{{ route('pacientes.index') }}" method="GET" id="searchForm">
-                <div class="input-group">
-                    <input type="text" 
-                           name="query" 
-                           class="form-control form-control-sm bg-light border-secondary-subtle" 
-                           placeholder="Escribe el Número de Expediente, CURP o Nombre completo del paciente..." 
-                           value="{{ $searchTerm }}"
-                           autocomplete="off">
-                    <button type="submit" class="btn btn-sm btn-secondary px-4 fw-medium">
-                        Buscar Paciente
-                    </button>
-                    @if(!empty($searchTerm))
-                        <!-- Botón para limpiar filtro rápidamente si hay una búsqueda activa -->
-                        <a href="{{ route('pacientes.index') }}" class="btn btn-sm btn-outline-danger d-flex align-items-center px-3">
-                            Limpiar
+                <!-- Fila principal de inputs utilizando el espaciado responsivo g-3 de Bootstrap 5 -->
+                <div class="row g-3 mb-3">
+                    
+                    <!-- Campo CURP: 12 columnas en móvil, 6 en tablet/laptop, 4 en pantallas de escritorio grandes -->
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="curp" class="form-label fw-bold text-secondary small mb-1">CURP:</label>
+                        <input type="text" 
+                            id="curp"
+                            name="curp" 
+                            class="form-control form-control-sm text-uppercase border-secondary-subtle" 
+                            placeholder=""
+                            value="{{ request('curp') }}"
+                            autocomplete="off">
+                    </div>
+
+                    <!-- Campo Nombre(s) -->
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="nombres" class="form-label fw-bold text-secondary small mb-1">Nombre(s):</label>
+                        <input type="text" 
+                            id="nombres"
+                            name="nombres" 
+                            class="form-control form-control-sm border-secondary-subtle" 
+                            placeholder=""
+                            value="{{ request('nombres') }}"
+                            autocomplete="off">
+                    </div>
+
+                    <!-- Campo Primer Apellido -->
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="apellido_paterno" class="form-label fw-bold text-secondary small mb-1">Primer Apellido:</label>
+                        <input type="text" 
+                            id="apellido_paterno"
+                            name="apellido_paterno" 
+                            class="form-control form-control-sm border-secondary-subtle" 
+                            placeholder=""
+                            value="{{ request('apellido_paterno') }}"
+                            autocomplete="off">
+                    </div>
+
+                    <!-- Campo Segundo Apellido: Toma un bloque más ancho para equilibrar la rejilla visual de tu tarjeta -->
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="apellido_materno" class="form-label fw-bold text-secondary small mb-1">Segundo Apellido:</label>
+                        <input type="text" 
+                            id="apellido_materno"
+                            name="apellido_materno" 
+                            class="form-control form-control-sm border-secondary-subtle" 
+                            placeholder=""
+                            value="{{ request('apellido_materno') }}"
+                            autocomplete="off">
+                    </div>
+                    
+                </div>
+
+                <!-- Bloque de control inferior para botones: Línea divisoria y alineación flexbox a la derecha -->
+                <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 pt-2 border-top border-light">
+                    
+                    <!-- El botón Limpiar solo aparece si hay un filtro de búsqueda activo en la URL -->
+                    @if(request()->filled('curp') || request()->filled('nombres') || request()->filled('apellido_paterno') || request()->filled('apellido_materno'))
+                        <a href="{{ route('pacientes.index') }}" class="btn btn-sm btn-outline-danger order-2 order-sm-1 px-4 py-1.5 rounded-2 fw-medium">
+                            Limpiar Filtros
                         </a>
                     @endif
+
+                    <button type="submit" class="btn btn-sm btn-warning order-1 order-sm-2 px-4 py-1.5 rounded-2 fw-medium text-white shadow-sm" style="">
+                        Buscar Expediente
+                    </button>
                 </div>
             </form>
+
         </div>
     </div>
 </div>
@@ -135,7 +211,7 @@
                             <!-- Estado Vacío Informativo -->
                             <tr>
                                 <td colspan="8" class="text-center py-5 text-muted">
-                                    <span class="fs-2 d-block mb-2">📋</span>
+                                    <span class="fs-2 d-block mb-2"><i class="bi bi-journal-arrow-up"></span>
                                     <h6 class="fw-semibold m-0">No se encontraron expedientes clínicos</h6>
                                     <small class="text-muted">Intenta cambiar los términos de búsqueda o registra un nuevo paciente en el sistema.</small>
                                 </td>

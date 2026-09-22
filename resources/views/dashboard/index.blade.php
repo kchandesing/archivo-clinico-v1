@@ -22,7 +22,7 @@
                 </div>
                 <div class="p-2 bg-light rounded-3 text-secondary">
                     <!-- Indicador visual provisional -->
-                    <span class="fs-4">👥</span>
+                    <span class="fs-4"><i class="bi bi-people-fill"></i></span>
                 </div>
             </div>
             <small class="text-muted d-block mt-2" style="font-size: 0.72rem;">Expedientes totales en la BD</small>
@@ -38,7 +38,7 @@
                     <h3 class="fw-bold text-success m-0">0</h3>
                 </div>
                 <div class="p-2 bg-light rounded-3">
-                    <span class="fs-4">🗄️</span>
+                    <span class="fs-4"><i class="bi bi-archive-fill"></i></span>
                 </div>
             </div>
             <small class="text-muted d-block mt-2" style="font-size: 0.72rem;">Expedientes físicos disponibles</small>
@@ -54,7 +54,7 @@
                     <h3 class="fw-bold text-warning m-0">0</h3>
                 </div>
                 <div class="p-2 bg-light rounded-3">
-                    <span class="fs-4">📋</span>
+                    <span class="fs-4"><i class="bi bi-journal-arrow-up"></i></span>
                 </div>
             </div>
             <small class="text-muted d-block mt-2" style="font-size: 0.72rem;">Expedientes en consulta médica</small>
@@ -70,7 +70,7 @@
                     <h3 class="fw-bold text-info m-0">0</h3>
                 </div>
                 <div class="p-2 bg-light rounded-3">
-                    <span class="fs-4">🛡️</span>
+                    <span class="fs-4"><i class="bi bi-shield-lock-fill"></i></span>
                 </div>
             </div>
             <small class="text-muted d-block mt-2" style="font-size: 0.72rem;">Eventos registrados hoy en Syslog</small>

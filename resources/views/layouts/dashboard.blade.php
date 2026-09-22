@@ -7,6 +7,8 @@
     
     <!-- Bootstrap 5 Nativo -->
     <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
+    <!-- Bootstrap 5 icons -->
+    <link href="{{ asset('css/bootstrap-icons.min.css') }}" rel="stylesheet">
     <!-- Estilos específicos del Dashboard -->
     <link href="{{ asset('css/dashboard.css') }}" rel="stylesheet">
     
