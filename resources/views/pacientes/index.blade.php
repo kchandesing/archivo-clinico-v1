@@ -10,26 +10,80 @@
     </div>
     <div class="col-12 col-md-6 text-md-end mt-3 mt-md-0">
         <!-- Botón para ir al formulario de captura (Sprint 2 - Siguiente paso) -->
-        <!-- <a href="{{ route('pacientes.create') }}" class="btn btn-sm btn-success px-3 py-2 rounded-2 fw-medium shadow-sm">
-            + Registrar Nuevo Paciente
-        </a> -->
-        <!-- Botón para ir al formulario de captura (Sprint 2 - Siguiente paso) -->
         <button type="button" class="btn btn-sm btn-success px-3 py-2 rounded-2 fw-medium shadow-sm" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
             Registrar Nuevo Paciente
         </button>
-
-
-        <!-- Modal -->
+    </div>
+</div>
+<!-- Modal -->
         <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <i class="bi bi-person-fill"></i>
-                        <h5 class="modal-title" id="staticBackdropLabel">Modal title</h5>
+                        <h4 class="modal-title fw-bold" id="staticBackdropLabel"><i class="bi bi-person-fill mx-1"></i>Registo de paciente</h4>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        ...
+                        <div class="container">
+                            <div class="row g-3 mb-3">
+                                <div class="col-12 border-bottom border-secondary mb-1">
+                                    <h5>Datos Personales</h5>
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-3">
+                                    <label for="curp" class="form-label fw-bold text-secondary small mb-1">CURP</label>
+                                    <input type="text" readonly class="form-control form-control-sm text-uppercase border-secondary-subtle">
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-3">
+                                    <label for="nombre" class="form-label fw-bold text-secondary small mb-1">Nombre(s)</label>
+                                    <input type="text"  readonly class="form-control form-control-sm text-uppercase border-secondary-subtle">
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-3">
+                                    <label for="apellidop" class="form-label fw-bold text-secondary small mb-1">Primer Apellido</label>
+                                    <input type="text" readonly class="form-control form-control-sm text-uppercase border-secondary-subtle">
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-3">
+                                    <label for="apellidom" class="form-label fw-bold text-secondary small mb-1">Segundo Apellido</label>
+                                    <input type="text" readonly class="form-control form-control-sm text-uppercase border-secondary-subtle">
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-3">
+                                    <label for="sexo" class="form-label fw-bold text-secondary small mb-1">Sexo</label>
+                                    <input type="text" readonly class="form-control form-control-sm text-uppercase border-secondary-subtle">
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-3">
+                                    <label for="fechan" class="form-label fw-bold text-secondary small mb-1">Fecha de naciemiento</label>
+                                    <input type="date" readonly class="form-control form-control-sm text-uppercase border-secondary-subtle">
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-3">
+                                    <label for="edad" class="form-label fw-bold text-secondary small mb-1">Edad</label>
+                                    <input type="text" readonly class="form-control form-control-sm text-uppercase border-secondary-subtle" >
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-3">
+                                    <label for="edad" class="form-label fw-bold text-secondary small mb-1">Clave de edad</label>
+                                    <input type="text" list="cvelistOptions" readonly class="form-control form-control-sm text-uppercase border-secondary-subtle" >
+                                    <datalist id="cvelistOptions">
+                                        <option value="San Francisco">
+                                    </datalist>
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-3">
+                                    <label for="paisn" class="form-label fw-bold text-secondary small mb-1">Pais de nacimiento</label>
+                                    <input type="text" readonly class="form-control form-control-sm text-uppercase border-secondary-subtle" id="paisn">
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-3">
+                                    <label for="paisn" class="form-label fw-bold text-secondary small mb-1">Afiliación</label>
+                                    <input type="text" readonly class="form-control form-control-sm text-uppercase border-secondary-subtle">
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-3">
+                                    <label for="paisn" class="form-label fw-bold text-secondary small mb-1">Núm. Afiliación</label>
+                                    <input type="text" readonly class="form-control form-control-sm text-uppercase border-secondary-subtle">
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-3 d-flex align-items-center">
+                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
+                                    <label class="form-check-label fw-bold text-secondary border-secondary-subtle small mx-1" for="flexCheckDefault">
+                                        ¿Nació en el extranjero?
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -38,8 +92,6 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
 <!-- Alertas de Éxito o Error Operativo -->
 @if(session('success'))
@@ -116,7 +168,7 @@
                 </div>
 
                 <!-- Bloque de control inferior para botones: Línea divisoria y alineación flexbox a la derecha -->
-                <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 pt-2 border-top border-light">
+                <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 pt-2 border-top border-secondary">
                     
                     <!-- El botón Limpiar solo aparece si hay un filtro de búsqueda activo en la URL -->
                     @if(request()->filled('curp') || request()->filled('nombres') || request()->filled('apellido_paterno') || request()->filled('apellido_materno'))
